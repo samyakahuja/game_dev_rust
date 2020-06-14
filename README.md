@@ -2,7 +2,7 @@
 
 ## Libraries
 
-Instead of using a bigger framework, like `ggez`, we are going to write a lot
+Instead of using a bigger framework, like `ggez`, going to write a lot
 of abstractions, that these game engines provide, ourselves.
 
 |  Crate  | Summary                              |
@@ -20,3 +20,4 @@ Install these three sdl2 related libraries using your system's package manager.
 - `sdl2_image`
 - `sdl2_ttf`
 
+The assets are by [Jason Perry](http://finalbossblues.com/timefantasy/category/freebies/)
