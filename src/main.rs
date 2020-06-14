@@ -1,13 +1,49 @@
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
+use sdl2::render::{WindowCanvas, Texture};
+use sdl2::image::{self, LoadTexture, InitFlag};
+use sdl2::rect::{Point, Rect};
 use std::time::Duration;
 
-pub fn main() {
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
+#[derive(Debug)]
+struct Player {
+    position: Point,
+    sprite: Rect,
+    speed: i32,
+}
 
-    let window = video_subsystem.window("rust-sdl2 demo", 800, 600)
+fn render(
+    canvas: &mut WindowCanvas,
+    color: Color,
+    texture: &Texture,
+    player: &Player,
+) -> Result<(), String> {
+    canvas.set_draw_color(color);
+    canvas.clear();
+
+    let (width, height) = canvas.output_size()?;
+
+    // (0,0) as center of screen
+    let screen_position = player.position + Point::new(width as i32 / 2, height as i32 / 2);
+    let screen_rect = Rect::from_center(
+        screen_position,
+        player.sprite.width(),
+        player.sprite.height()
+    );
+    canvas.copy(texture, player.sprite, screen_rect)?;
+
+    canvas.present();
+
+    Ok(())
+}
+
+fn main() -> Result<(), String> {
+    let sdl_context = sdl2::init()?;
+    let video_subsystem = sdl_context.video()?;
+    let _image_context = image::init(InitFlag::PNG | InitFlag::JPG)?;
+
+    let window = video_subsystem.window("the rust game", 800, 600)
         .position_centered()
         .build()
         .expect("could not initialize video subsystem");
@@ -15,31 +51,51 @@ pub fn main() {
     let mut canvas = window.into_canvas().build()
         .expect("could not make a canvas");
 
-    canvas.set_draw_color(Color::RGB(0, 255, 255));
-    canvas.clear();
-    canvas.present();
+    let texture_creator = canvas.texture_creator();
+    let texture = texture_creator.load_texture("assets/bardo.png")?;
 
-    let mut event_pump = sdl_context.event_pump().unwrap();
+    let mut player = Player {
+        position: Point::new(0, 0),
+        sprite: Rect::new(0, 0, 26, 26),
+        speed: 15,
+    };
+
+    let mut event_pump = sdl_context.event_pump()?;
     let mut i = 0;
 
     'running: loop {
-        i = (i + 1) % 255;
-        canvas.set_draw_color(Color::RGB(i, 64, 255 - i));
-        canvas.clear();
-
+        // Handle events
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     break 'running
                 },
+                Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
+                    player.position = player.position.offset(-player.speed, 0);
+                },
+                Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
+                    player.position = player.position.offset(player.speed, 0);
+                },
+                Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
+                    player.position = player.position.offset(0, -player.speed);
+                },
+                Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
+                    player.position = player.position.offset(0, player.speed);
+                },
                 _ => {}
             }
         }
 
-        // The rest of the game loop goes here...
+        // Update
+        i = (i + 1) % 255;
 
-        canvas.present();
+        // Render
+        render(&mut canvas, Color::RGB(i, i, i), &texture, &player)?;
+
+        // Time management
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
+
+    Ok(())
 }
