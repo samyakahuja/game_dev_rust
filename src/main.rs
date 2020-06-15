@@ -6,11 +6,33 @@ use sdl2::image::{self, LoadTexture, InitFlag};
 use sdl2::rect::{Point, Rect};
 use std::time::Duration;
 
+const PLAYER_MOVEMENT_SPEED: i32 = 20;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
 #[derive(Debug)]
 struct Player {
     position: Point,
     sprite: Rect,
     speed: i32,
+    direction: Direction,
+    current_frame: i32,
+}
+
+fn direction_spritesheet_row(direction: Direction) -> i32 {
+    use self::Direction::*;
+    match direction {
+        Up => 3,
+        Down => 0,
+        Left => 1,
+        Right => 2,
+    }
 }
 
 fn render(
@@ -24,18 +46,37 @@ fn render(
 
     let (width, height) = canvas.output_size()?;
 
+    let (frame_width, frame_height) = player.sprite.size();
+    // take frame from image
+    let current_frame = Rect::new(
+        player.sprite.x() + frame_width as i32 * player.current_frame,
+        player.sprite.y() + frame_height as i32 * direction_spritesheet_row(player.direction),
+        frame_width,
+        frame_height,
+    );
+
     // (0,0) as center of screen
     let screen_position = player.position + Point::new(width as i32 / 2, height as i32 / 2);
-    let screen_rect = Rect::from_center(
-        screen_position,
-        player.sprite.width(),
-        player.sprite.height()
-    );
-    canvas.copy(texture, player.sprite, screen_rect)?;
+    let screen_rect = Rect::from_center(screen_position, frame_width * 3, frame_height * 3);
+    canvas.copy(texture, current_frame, screen_rect)?;
 
     canvas.present();
 
     Ok(())
+}
+
+fn update_player(player: &mut Player) {
+    use self::Direction::*;
+    match player.direction {
+        Left  => { player.position = player.position.offset(-player.speed, 0); },
+        Right => { player.position = player.position.offset(player.speed, 0); },
+        Up    => { player.position = player.position.offset(0, -player.speed); },
+        Down  => { player.position = player.position.offset(0, player.speed); },
+    }
+
+    if player.speed != 0 {
+        player.current_frame = (player.current_frame + 1) % 5;
+    }
 }
 
 fn main() -> Result<(), String> {
@@ -56,8 +97,10 @@ fn main() -> Result<(), String> {
 
     let mut player = Player {
         position: Point::new(0, 0),
-        sprite: Rect::new(0, 0, 26, 26),
-        speed: 15,
+        sprite: Rect::new(0, 0, 26, 36),
+        speed: 0,
+        direction: Direction::Right,
+        current_frame: 0,
     };
 
     let mut event_pump = sdl_context.event_pump()?;
@@ -71,30 +114,41 @@ fn main() -> Result<(), String> {
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     break 'running
                 },
-                Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
-                    player.position = player.position.offset(-player.speed, 0);
+                Event::KeyDown { keycode: Some(Keycode::Left), repeat: false, .. } => {
+                    player.speed = PLAYER_MOVEMENT_SPEED;
+                    player.direction = Direction::Left;
                 },
-                Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
-                    player.position = player.position.offset(player.speed, 0);
+                Event::KeyDown { keycode: Some(Keycode::Right), repeat: false, .. } => {
+                    player.speed = PLAYER_MOVEMENT_SPEED;
+                    player.direction = Direction::Right;
                 },
-                Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
-                    player.position = player.position.offset(0, -player.speed);
+                Event::KeyDown { keycode: Some(Keycode::Up), repeat: false, .. } => {
+                    player.speed = PLAYER_MOVEMENT_SPEED;
+                    player.direction = Direction::Up;
                 },
-                Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
-                    player.position = player.position.offset(0, player.speed);
+                Event::KeyDown { keycode: Some(Keycode::Down), repeat:false, .. } => {
+                    player.speed = PLAYER_MOVEMENT_SPEED;
+                    player.direction = Direction::Down;
                 },
+                Event::KeyUp { keycode: Some(Keycode::Left), repeat: false, .. } |
+                Event::KeyUp { keycode: Some(Keycode::Right), repeat: false, .. } |
+                Event::KeyUp { keycode: Some(Keycode::Up), repeat: false, .. } |
+                Event::KeyUp { keycode: Some(Keycode::Down), repeat: false, .. } => {
+                    player.speed = 0;
+                }
                 _ => {}
             }
         }
 
         // Update
         i = (i + 1) % 255;
+        update_player(&mut player);
 
         // Render
         render(&mut canvas, Color::RGB(i, i, i), &texture, &player)?;
 
-        // Time management
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+        // Time management (20fps)
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 20));
     }
 
     Ok(())
