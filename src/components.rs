@@ -1,6 +1,6 @@
 use sdl2::rect::{Point, Rect};
 
-use specs::prelude::{Component, VecStorage};
+use specs::prelude::*;
 use specs_derive::Component;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -10,6 +10,11 @@ pub enum Direction {
     Left,
     Right,
 }
+
+/// marker component
+#[derive(Component, Debug, Default)]
+#[storage(NullStorage)]
+pub struct KeyboardControlled;
 
 #[derive(Component, Debug)]
 #[storage(VecStorage)]
@@ -34,6 +39,7 @@ pub struct Sprite {
 #[derive(Component, Debug)]
 #[storage(VecStorage)]
 pub struct MovementAnimation {
+    /// index into Vec<Sprite>
     pub current_frame: usize,
     /// storing the sprite for each frame of the animation
     pub up_frames: Vec<Sprite>,
