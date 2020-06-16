@@ -38,3 +38,13 @@ The assets are by [Jason Perry](http://finalbossblues.com/timefantasy/category/f
     + [resizable](https://docs.rs/sdl2/0.32.2/sdl2/video/struct.WindowBuilder.html#method.resizable)
     + [set_scale](https://docs.rs/sdl2/0.32.2/sdl2/render/struct.Canvas.html#method.set_scale)
     + [WindowEvent::Resized](https://docs.rs/sdl2/0.32.2/sdl2/event/enum.WindowEvent.html#variant.Resized)
+
+    You have to use `Event::Window` variant of the enum `Event`.
+
+    ```rust
+    if let Event::Window { win_event, .. } = event {
+        if let WindowEvent::Resized(w, h) = win_event {
+            //handle the resize event
+        }
+    }
+    ```

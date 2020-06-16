@@ -5,7 +5,7 @@ mod keyboard;
 mod renderer;
 
 use sdl2::pixels::Color;
-use sdl2::event::{Event};
+use sdl2::event::{Event, WindowEvent};
 use sdl2::keyboard::Keycode;
 use sdl2::image::{self, LoadTexture, InitFlag};
 use sdl2::rect::{Point, Rect};
@@ -139,6 +139,16 @@ fn main() -> Result<(), String> {
                     movement_command = Some(MovementCommand::Stop);
                 }
                 _ => {}
+            }
+            if let Event::Window { win_event, .. } = event {
+                if let WindowEvent::Resized(w, h) = win_event {
+                    // TODO: improve upon this! Maybe list certain resolution-scale mappings
+                    if (10.0 * w as f32 / h as f32).trunc() as i32 == 13 {
+                        let x_scale = w as f32 / 320.0;
+                        let y_scale = h as f32 / 240.0;
+                        canvas.set_scale(x_scale, y_scale)?;
+                    }
+                }
             }
         }
 

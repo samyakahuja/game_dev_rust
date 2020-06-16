@@ -27,8 +27,8 @@ pub fn render(
         let screen_position = pos.0 + Point::new(width as i32 / 2, height as i32 / 2);
         let screen_rect = Rect::from_center(
             screen_position,
-            current_frame.width() * 3,
-            current_frame.height() * 3,
+            current_frame.width(),
+            current_frame.height(),
         );
         canvas.copy(&textures[sprite.spritesheet], current_frame, screen_rect)?;
     }
