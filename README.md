@@ -20,6 +20,10 @@ Install these three sdl2 related libraries using your system's package manager.
 - `sdl2_image`
 - `sdl2_ttf`
 
+To run you need rust and cargo which can be installed from
+[rustup.rs](https://rustup.rs/). Then execute `cargo run` from within the
+repository.
+
 The assets are by [Jason Perry](http://finalbossblues.com/timefantasy/category/freebies/)
 
 ## Notes
